@@ -1,0 +1,40 @@
+# --- Secrets & environment ---
+.env
+.env.local
+*.key
+
+# --- Data (large / fetched / derived) ---
+data/raw/*
+data/interim/*
+data/processed/*
+data/reference/*
+# keep folder structure + curated demo/sample files
+!data/**/.gitkeep
+!data/processed/*_DEMO.csv
+!data/reference/README.md
+!data/reference/us_county_fips.csv    # bundled US county list (states + DC) for demo
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# --- OS / IDE ---
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# --- Power BI temp ---
+*.pbix.bak
+~$*.pbix

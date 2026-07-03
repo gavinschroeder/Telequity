@@ -1,0 +1,25 @@
+{
+  "name": "telequity-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Telequity project console — embeds the Power BI report via Power BI Embedded.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "node server/index.js",
+    "dev:all": "concurrently -k \"npm:server\" \"npm:dev\""
+  },
+  "dependencies": {
+    "powerbi-client": "^2.23.1",
+    "powerbi-client-react": "^2.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.0",
+    "vite": "^5.4.11"
+  }
+}

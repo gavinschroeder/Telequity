@@ -1,0 +1,137 @@
+# =====================================================================
+# Telequity — central configuration
+# Everything that defines a run lives here so analysis choices are
+# transparent and reproducible (no magic numbers buried in code).
+# =====================================================================
+
+# --- Geographic scope --------------------------------------------------
+# mode: "national" covers every US county (the project goal). Set mode "state"
+# with a state_fips/state_abbr to restrict to one state (e.g. the Texas pilot).
+scope:
+  mode: "national"          # "national" | "state"
+  state_name: "United States"
+  state_fips: null          # e.g. "48" when mode: state
+  state_abbr: null          # e.g. "TX" when mode: state
+  grain: "county"           # analysis unit (county FIPS)
+
+# --- Broadband speed tiers (BEAD statutory definitions, IIJA 2021) -----
+# These are the agreed, federally-defined thresholds — do not invent.
+#   Unserved   : location lacks 25/3 Mbps
+#   Underserved: location lacks 100/20 Mbps  (FCC fixed benchmark, Mar 2024)
+broadband:
+  unserved_down_mbps: 25
+  unserved_up_mbps: 3
+  underserved_down_mbps: 100
+  underserved_up_mbps: 20
+  # Technologies counted as "reliable" for served/unserved math (BEAD-style):
+  # fiber, cable, copper/DSL, licensed fixed wireless. Satellite & unlicensed excluded.
+  reliable_tech_codes: [10, 40, 50, 71]   # FCC BDC technology codes
+  # Broadband source. Point at a FOLDER of BDC CSVs (one per state is fine — the
+  # loader concatenates every *.csv in it) or a single national CSV. If missing,
+  # the pipeline tries the BDC API (needs FCC token).
+  bulk_download_path: "data/raw/bdc"
+
+# --- "Digital desert" designation -------------------------------------
+# The SPEED thresholds above are statutory. There is NO agreed cutoff for
+# what share of a county makes the whole county "low access", so we set it
+# transparently from the distribution rather than inventing a number.
+desert:
+  metric: "pct_below_benchmark"   # county share of locations below 100/20 (under+unserved)
+  method: "percentile"           # percentile | absolute
+  percentile_cutoff: 75          # top quartile of underserved share = "desert"
+  absolute_cutoff: 0.30          # used only if method == absolute
+
+# --- Digital Equity Exposure Index weights ----------------------------
+# Transparent weighted composite of three normalized (0-100) components.
+# Higher index = greater digital-equity exposure / risk.
+index:
+  weights:
+    availability_gap: 0.40       # % underserved/unserved (paper access shortfall)
+    complaint_friction: 0.35     # complaints per 1k households (experienced friction)
+    socioeconomic: 0.25          # income/rurality/age vulnerability composite
+  # Socioeconomic sub-weights (normalized internally):
+  socioeconomic_weights:
+    low_income: 0.45             # inverse of median household income
+    rurality: 0.35              # % rural population
+    age_vulnerability: 0.20      # share 65+
+  normalization: "minmax"        # minmax | zscore (minmax keeps 0-100 readable)
+
+# --- Access-Infrastructure Mismatch -----------------------------------
+# The signature ethical/business metric: high planned compute load sitting
+# on top of low experienced access. Framed as juxtaposition, NOT causation.
+mismatch:
+  infra_metric: "planned_mw"     # planned data-center load (MW) per county
+  access_metric: "equity_index"  # county Digital Equity Exposure Index
+  # Both min-max normalized 0-1, then mismatch = infra_norm * access_norm.
+  # High score = lots of incoming compute where access is worst.
+
+# --- Census ACS variables (2022 5-year unless overridden) -------------
+acs:
+  year: 2022
+  dataset: "acs/acs5"
+  variables:
+    B01003_001E: "total_population"
+    B11001_001E: "total_households"
+    B19013_001E: "median_household_income"
+    B01002_001E: "median_age"
+    B09021_022E: "pop_65_plus"          # (approx; see acs.py for exact 65+ build)
+  # Rurality is derived from the Census urban/rural relationship file
+  # (county % rural), configured under reference below.
+
+# --- Complaint categorization -----------------------------------------
+complaints:
+  dataset_id: "3xyp-aqkj"                 # FCC CGB Consumer Complaints (Socrata)
+  socrata_domain: "opendata.fcc.gov"
+  # Map raw issue_type -> analysis category buckets aligned to the brief.
+  category_map:
+    Internet: "internet"
+    Phone: "wireless_wireline"
+    TV: "tv_video"
+    Radio: "radio"
+    Emergency: "emergency"
+    Accessibility: "accessibility"
+    "Broadband Story": "internet"
+    "Request for Dispute Assistance": "billing_dispute"
+  # Date window for the pilot (inclusive). null = all available.
+  date_from: "2021-01-01"
+  date_to: null
+
+# --- Infrastructure (data centers) ------------------------------------
+# Anchor sources: PNNL Data Center Atlas + LBNL interconnection queue.
+# These are FILE-based (download once); paths point at the local copies.
+infrastructure:
+  pnnl_atlas_path: "data/raw/pnnl_data_center_atlas.csv"
+  lbnl_queue_path: "data/raw/lbnl_interconnection_queue.csv"
+  # Statuses counted as "planned" pipeline (vs. operational):
+  planned_statuses: ["proposed", "planned", "under construction", "active", "queued"]
+
+# --- Water (best-effort; may be deferred per project plan) ------------
+water:
+  enabled: true
+  usgs_county_water_path: "data/raw/usgs_county_water_use.csv"
+  # Modeled data-center water intensity (L per kWh) if site data missing:
+  modeled_l_per_kwh: 1.8        # midpoint of common industry estimates
+
+# --- Reference geographies -------------------------------------------------
+# The crosswalk + shapefile auto-download from these stable Census URLs on the
+# first real run (see ingest/fetch_reference.py); cached thereafter.
+reference:
+  county_shapefile: "data/reference/tl_2024_us_county/tl_2024_us_county.shp"
+  county_shapefile_url: "https://www2.census.gov/geo/tiger/TIGER2024/COUNTY/tl_2024_us_county.zip"
+  zcta_county_crosswalk: "data/reference/zcta_county_crosswalk.csv"
+  zcta_county_url: "https://www2.census.gov/geo/docs/maps-data/data/rel2020/zcta520/tab20_zcta520_county20_natl.txt"
+  urban_rural_file: "data/reference/county_urban_rural.csv"
+  us_county_fips: "data/reference/us_county_fips.csv"   # bundled (states + DC)
+
+# --- I/O paths ---------------------------------------------------------
+paths:
+  raw: "data/raw"
+  interim: "data/interim"
+  processed: "data/processed"     # gold tables Power BI connects to
+  reference: "data/reference"
+  # OPTIONAL: also write the single gold workbook (telequity_gold.xlsx) here.
+  # Point this at a OneDrive/SharePoint-synced folder so Power BI auto-refreshes
+  # from it — then re-running the pipeline updates the dashboards with no manual
+  # upload. Leave null to skip. Example (Mac):
+  #   "/Users/gavin/Library/CloudStorage/OneDrive-<org>/Telequity"
+  publish_workbook_to: "/Users/gavinschroeder/OneDrive - University of Florida/Telequity"

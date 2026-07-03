@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "telequity"
+version = "0.1.0"
+description = "Telecom Complaint Intelligence Platform — mapping the gap between reported and experienced digital access, overlaid against data-center infrastructure expansion."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Gavin Schroeder" }]
+dependencies = [
+  "pandas>=2.1",
+  "numpy>=1.26",
+  "pyarrow>=14.0",
+  "requests>=2.31",
+  "PyYAML>=6.0",
+  "python-dotenv>=1.0",
+  "geopandas>=0.14",
+  "shapely>=2.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.4"]
+
+[project.scripts]
+telequity = "telequity.pipeline:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

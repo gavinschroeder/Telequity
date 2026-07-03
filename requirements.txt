@@ -1,0 +1,16 @@
+# Core data stack
+pandas>=2.1
+numpy>=1.26
+pyarrow>=14.0          # parquet I/O
+openpyxl>=3.1          # single-workbook (.xlsx) gold export for Power BI
+requests>=2.31
+PyYAML>=6.0
+python-dotenv>=1.0
+
+# Geospatial (county assignment, point-in-polygon, choropleth prep)
+geopandas>=0.14
+shapely>=2.0
+
+# Quality / tooling (optional but recommended)
+pytest>=8.0
+ruff>=0.4
