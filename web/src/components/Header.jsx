@@ -22,7 +22,6 @@ export default function Header({ project, embedStatus }) {
         </span>
         <div className="brand-text">
           <h1>{project.name}</h1>
-          <p>{project.tagline}</p>
         </div>
       </div>
       <div className="header-right">

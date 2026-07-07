@@ -2,6 +2,9 @@ import { useEffect, useRef } from "react";
 import { PowerBIEmbed } from "powerbi-client-react";
 import { models } from "powerbi-client";
 import StateCard from "./StateCard.jsx";
+import AnalysisPanel from "./AnalysisPanel.jsx";
+import ColorLegend from "./ColorLegend.jsx";
+import { EQUITY_LEGEND } from "../config";
 
 export default function ReportCanvas({ embed, page }) {
   const reportRef = useRef(null);
@@ -64,6 +67,7 @@ export default function ReportCanvas({ embed, page }) {
         <h2>{page.label}</h2>
         <p>{page.blurb}</p>
       </div>
+      {page.legend === "equity" && <ColorLegend legend={EQUITY_LEGEND} />}
       <div className="report-frame">
         <PowerBIEmbed
           embedConfig={{
@@ -92,6 +96,7 @@ export default function ReportCanvas({ embed, page }) {
           }}
         />
       </div>
+      <AnalysisPanel pageKey={page.key} />
     </div>
   );
 }

@@ -8,11 +8,11 @@ data/raw/*
 data/interim/*
 data/processed/*
 data/reference/*
-# keep folder structure + curated demo/sample files
+# keep folder structure + bundled reference inputs (generated data stays out)
 !data/**/.gitkeep
-!data/processed/*_DEMO.csv
 !data/reference/README.md
-!data/reference/us_county_fips.csv    # bundled US county list (states + DC) for demo
+# bundled US county list (states + DC) used by the demo generator:
+!data/reference/us_county_fips.csv
 
 # --- Python ---
 __pycache__/

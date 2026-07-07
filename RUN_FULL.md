@@ -27,13 +27,15 @@ flowing into the Power BI dashboards and the webpage.
 
 ## Step 2 — source files (one-time downloads)
 
-1. **Broadband** — https://broadbandmap.fcc.gov/data-download → select **Fixed
-   Broadband**, current vintage. Download the **per-state** availability CSVs
-   (or the national file) and drop them all into a folder:
-   `data/raw/bdc/`  (the loader concatenates every CSV in it). Nothing to rename.
+1. **Broadband** — https://broadbandmap.fcc.gov/data-download, current vintage.
+   From the left **Summary** column download **"Fixed Broadband Summary by
+   Geography Type → State, County, ..."** — a single national CSV, already
+   aggregated to county. Drop it into `data/raw/bdc/`. (The loader also accepts
+   location-level availability files, but the summary is the laptop-friendly one.)
 2. **Data centers**
    - PNNL Data Center Atlas CSV → `data/raw/pnnl_data_center_atlas.csv`
-   - LBNL interconnection queue → `data/raw/lbnl_interconnection_queue.csv`
+     (download from https://im3.pnnl.gov/datacenter-atlas)
+   - *(Optional)* LBNL interconnection queue → `data/raw/lbnl_interconnection_queue.csv`
 3. *(Optional)* **USGS** county water use → `data/raw/usgs_county_water_use.csv`
 4. **County geometry + ZIP↔county crosswalk** — *nothing to do*; auto-downloaded
    on first run.
@@ -43,7 +45,10 @@ flowing into the Power BI dashboards and the webpage.
 `config/config.yaml` is already set for the full run:
 - `scope.mode: national`
 - `broadband.bulk_download_path: "data/raw/bdc"` (the folder from Step 2)
-- `paths.publish_workbook_to:` your OneDrive `Telequity` folder
+
+To also auto-publish the workbook to a synced folder (OneDrive/SharePoint) so
+Power BI refreshes on its own, set `TELEQUITY_PUBLISH_DIR` in your local `.env`
+to that folder, e.g. `/Users/you/Library/CloudStorage/OneDrive-<org>/Telequity`.
 
 ## Step 4 — run it (no demo)
 
@@ -55,8 +60,9 @@ python scripts/run_texas_pilot.py        # NOTE: no --demo  = real national run
 ```
 
 This pulls complaints + ACS, auto-fetches the crosswalk/shapefile, loads your
-broadband + data-center files, scores every US county, and writes
-`data/processed/telequity_gold.xlsx` (and a copy to OneDrive).
+broadband + data-center files, scores every US county, regenerates the
+per-dashboard `analysis.json`, and writes `data/processed/telequity_gold.xlsx`
+(and, if `TELEQUITY_PUBLISH_DIR` is set, a copy there for Power BI auto-refresh).
 
 *(geopandas is optional — if it isn't installed, county assignment uses the ZIP
 crosswalk automatically.)*

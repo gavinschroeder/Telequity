@@ -70,7 +70,10 @@ def run_real(cfg, *, max_records: int | None = None) -> dict[str, str]:
     )
     fact = compute_index(fact, cfg)
     fact = compute_mismatch(fact, cfg)
-    return write_gold(fact, complaint_long, facilities, cfg, demo=False)
+    paths = write_gold(fact, complaint_long, facilities, cfg, demo=False)
+    from .analysis import generate_analysis
+    generate_analysis(fact, complaint_long, facilities, cfg, demo=False)
+    return paths
 
 
 def run_demo(cfg) -> dict[str, str]:
@@ -83,6 +86,8 @@ def run_demo(cfg) -> dict[str, str]:
     fact = compute_index(county_pre, cfg)
     fact = compute_mismatch(fact, cfg)
     paths = write_gold(fact, complaint_long, facilities, cfg, demo=True)
+    from .analysis import generate_analysis
+    generate_analysis(fact, complaint_long, facilities, cfg, demo=True)
     log.info("Demo gold tables written (suffix _DEMO). NOT real measurements.")
     return paths
 

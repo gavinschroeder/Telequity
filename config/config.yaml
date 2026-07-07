@@ -55,6 +55,9 @@ index:
     rurality: 0.35              # % rural population
     age_vulnerability: 0.20      # share 65+
   normalization: "minmax"        # minmax | zscore (minmax keeps 0-100 readable)
+  # Color/severity tier breaks for the equity index maps (green<b0, yellow<b1,
+  # red<b2, dark-red>=b2). Baked into the gold tables as `equity_tier`.
+  tier_breaks: [12.7, 16.8, 23]
 
 # --- Access-Infrastructure Mismatch -----------------------------------
 # The signature ethical/business metric: high planned compute load sitting
@@ -129,9 +132,9 @@ paths:
   interim: "data/interim"
   processed: "data/processed"     # gold tables Power BI connects to
   reference: "data/reference"
-  # OPTIONAL: also write the single gold workbook (telequity_gold.xlsx) here.
-  # Point this at a OneDrive/SharePoint-synced folder so Power BI auto-refreshes
-  # from it — then re-running the pipeline updates the dashboards with no manual
-  # upload. Leave null to skip. Example (Mac):
-  #   "/Users/gavin/Library/CloudStorage/OneDrive-<org>/Telequity"
-  publish_workbook_to: "/Users/gavinschroeder/OneDrive - University of Florida/Telequity"
+  analysis_out: "web/public/analysis.json"   # per-dashboard AI analysis the web app reads
+  # OPTIONAL: also write the single gold workbook (telequity_gold.xlsx) into a
+  # OneDrive/SharePoint-synced folder so Power BI auto-refreshes from it. Prefer
+  # setting the env var TELEQUITY_PUBLISH_DIR in your local .env (keeps personal
+  # paths out of the repo); this config value is a fallback. Leave null to skip.
+  publish_workbook_to: null

@@ -1,0 +1,44 @@
+{
+  "generated_at": "2026-07-07T02:50:44+00:00",
+  "scope": "United States",
+  "demo": true,
+  "note": "Automated analysis generated from the underlying county data.",
+  "sections": {
+    "mismatch": {
+      "summary": "This view ranks counties by where data-center presence overlaps with the weakest consumer access. The highest-scoring counties are Gentry County, Tallahatchie County, Pipestone County, Lafayette County, and Greene County. A high score means a county carries both notable data-center activity and a large gap between the broadband reported as available and what residents actually experience.",
+      "callouts": [
+        "10 counties fall in the highest-concern group \u2014 meaningful data-center presence sitting on above-median access gaps.",
+        "Data centers are spread across 90 counties nationwide.",
+        "Intensity is currently measured by facility count (planned-megawatt data isn't integrated yet), so this reads as 'data-center footprint vs. access gap.'"
+      ]
+    },
+    "avail-vs-friction": {
+      "summary": "Across counties there is a weak positive relationship (r = 0.36) between the broadband availability gap and how often residents complain. Each dot is a county: the x-axis is the share of locations below the 100/20 Mbps benchmark, and the y-axis is complaints per 1,000 households. Counties toward the upper-right have both poor availability and high lived friction.",
+      "callouts": [
+        "598 counties sit in the 'paper access, poor experience' zone \u2014 availability looks fine but complaint friction is above the national median.",
+        "Notable examples of that pattern: Transylvania County, Delta County, McCormick County, and Southampton County."
+      ]
+    },
+    "categories": {
+      "summary": "Of roughly 792,119 consumer complaints in the record, the mix is led by phone/wireless (72%), internet (17%), and TV (9%). This shows what people are actually struggling with \u2014 not just whether service exists, but how it fails them day to day.",
+      "callouts": [
+        "Largest category: phone/wireless with 566,799 complaints.",
+        "Accessibility complaints are a small but distinct slice (0%)."
+      ]
+    },
+    "equity-map": {
+      "summary": "The Digital Equity Exposure Index ranges from 6 to 93 (median 44); higher means more combined risk \u2014 worse availability, more complaint friction, and greater socioeconomic vulnerability. Darker counties on the map carry the most exposure.",
+      "callouts": [
+        "Highest-exposure counties: Pipestone County, Lee County, Fayette County, Buena Vista County, and Orleans County.",
+        "786 counties are flagged as digital deserts (top quartile of locations below the 100/20 benchmark)."
+      ]
+    },
+    "datacenter-map": {
+      "summary": "183 data-center facilities are mapped across 90 counties. Bubbles are colored by the access level of the county they sit in, so clusters over darker counties show compute concentrating where connectivity is weakest.",
+      "callouts": [
+        "46 of the highest-exposure quartile counties already host at least one data center.",
+        "Placement is shown as a spatial juxtaposition against access \u2014 not a claim that data centers affect residential broadband."
+      ]
+    }
+  }
+}

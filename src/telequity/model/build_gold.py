@@ -18,8 +18,10 @@ Star schema:  fact_county  --county_fips-->  dim_county
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from ..config import Config, load_config
@@ -28,10 +30,24 @@ from ..utils import get_logger, write_table
 log = get_logger("model.gold")
 
 
+def _equity_tier(idx: pd.Series, cfg: Config) -> pd.Series:
+    """Bucket the equity index into 4 named severity tiers so Power BI maps can
+    color by a categorical column (4 choices) instead of thousands of values."""
+    b0, b1, b2 = cfg["index"].get("tier_breaks", [12.7, 16.8, 23])
+    labels = [
+        f"1 · Lower (< {b0})",
+        f"2 · Moderate ({b0}–{b1})",
+        f"3 · High ({b1}–{b2})",
+        f"4 · Very high (> {b2})",
+    ]
+    v = pd.to_numeric(idx, errors="coerce")
+    return pd.Series(np.select([v < b0, v < b1, v < b2], labels[:3], default=labels[3]), index=v.index)
+
+
 # County attributes copied onto secondary tables so each is self-sufficient in
 # Power BI (no relationships / no web-modeling needed to slice by these).
 _COUNTY_ATTRS = [
-    "county_fips", "county_name", "equity_index", "mismatch_score",
+    "county_fips", "county_name", "equity_index", "equity_tier", "mismatch_score",
     "mismatch_quadrant", "pct_below_benchmark", "is_digital_desert", "pct_rural",
 ]
 
@@ -117,6 +133,12 @@ def write_gold(
     suffix = "_DEMO" if demo else ""
     written: dict[str, str] = {}
 
+    # Bake the equity severity tier onto fact_county; enrichment then copies it
+    # onto the other tables so every map can color by it with no DAX.
+    if "equity_index" in fact_county.columns:
+        fact_county = fact_county.copy()
+        fact_county["equity_tier"] = _equity_tier(fact_county["equity_index"], cfg)
+
     # Make secondary tables self-sufficient (no relationships required in BI).
     complaint_long = _enrich_with_county(complaint_long, fact_county)
     data_centers = _enrich_with_county(data_centers, fact_county)
@@ -168,7 +190,8 @@ def write_gold(
 
     # Optional: also drop the workbook into a synced folder (e.g. OneDrive) so
     # Power BI auto-refreshes without any manual re-upload.
-    publish_to = cfg["paths"].get("publish_workbook_to")
+    # Prefer an env override (keeps personal paths out of the committed config).
+    publish_to = os.environ.get("TELEQUITY_PUBLISH_DIR") or cfg["paths"].get("publish_workbook_to")
     if publish_to:
         pub = Path(publish_to).expanduser() / f"telequity_gold{suffix}.xlsx"
         try:

@@ -5,9 +5,12 @@ import Header from "./components/Header.jsx";
 import ReportRail from "./components/ReportRail.jsx";
 import ReportCanvas from "./components/ReportCanvas.jsx";
 import PublicReportCanvas from "./components/PublicReportCanvas.jsx";
+import IntroView from "./components/IntroView.jsx";
+import AboutView from "./components/AboutView.jsx";
 
 export default function App() {
-  const [activeKey, setActiveKey] = useState(REPORT_PAGES[0].key);
+  // active is "overview" (default landing), "about", or a report page key.
+  const [active, setActive] = useState("overview");
   const [embed, setEmbed] = useState({ status: "loading", data: null, error: null });
 
   const isPublic = EMBED_MODE === "public";
@@ -22,7 +25,6 @@ export default function App() {
       });
       return;
     }
-    // Secure mode: fetch an embed token from the backend.
     let alive = true;
     fetchEmbedConfig()
       .then((data) => alive && setEmbed({ status: "ready", data, error: null }))
@@ -32,20 +34,26 @@ export default function App() {
     };
   }, [isPublic]);
 
-  const activePage = REPORT_PAGES.find((p) => p.key === activeKey) ?? REPORT_PAGES[0];
+  let main;
+  if (active === "overview") {
+    main = <IntroView pages={REPORT_PAGES} onOpen={setActive} />;
+  } else if (active === "about") {
+    main = <AboutView />;
+  } else {
+    const page = REPORT_PAGES.find((p) => p.key === active) ?? REPORT_PAGES[0];
+    main = isPublic ? (
+      <PublicReportCanvas url={PUBLIC_EMBED_URL} page={page} />
+    ) : (
+      <ReportCanvas embed={embed} page={page} />
+    );
+  }
 
   return (
     <div className="app">
       <Header project={PROJECT} embedStatus={embed.status} />
       <div className="layout">
-        <ReportRail pages={REPORT_PAGES} activeKey={activeKey} onSelect={setActiveKey} />
-        <main className="canvas-wrap">
-          {isPublic ? (
-            <PublicReportCanvas url={PUBLIC_EMBED_URL} page={activePage} />
-          ) : (
-            <ReportCanvas embed={embed} page={activePage} />
-          )}
-        </main>
+        <ReportRail pages={REPORT_PAGES} active={active} onSelect={setActive} />
+        <main className="canvas-wrap">{main}</main>
       </div>
     </div>
   );

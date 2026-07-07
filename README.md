@@ -1,142 +1,134 @@
 # Telequity — Telecom Complaint Intelligence Platform
 
-Mapping the gap between **reported** digital access (what ISPs file with the FCC)
-and **experienced** access (what consumers actually complain about) — then
-overlaying that gap against where **data-center infrastructure** is being planned.
+[![CI](https://github.com/gavinschroeder/Telequity/actions/workflows/ci.yml/badge.svg)](https://github.com/gavinschroeder/Telequity/actions/workflows/ci.yml)
+
+Telequity maps the gap between **reported** digital access (what ISPs file with
+the FCC) and **experienced** access (what consumers actually complain about) for
+**every U.S. county**, then overlays that gap against where **data-center
+infrastructure** is being built.
 
 The thesis in one line: *digital deserts vs. digital extraction* — large-scale
-compute is increasingly being planned in the same rural places that already
-score worst on broadband access and highest on consumer friction.
+compute is landing across the country, sometimes in the same rural places that
+already report the worst connectivity. Telequity puts both on one map.
 
-> **Framing guardrail.** The data-center overlay is presented as juxtaposition
-> and resource-allocation equity, **not** causation. Data centers do not serve
-> residential broadband; the platform highlights *where investment flows vs.
-> where access lags*. This honesty is intentional and load-bearing.
-
----
-
-## What it produces
-
-A reproducible Python pipeline that fuses four public data sources at the
-**county** grain (national — every US county) and emits Power-BI-ready "gold" tables, including
-two signature metrics:
-
-1. **Digital Equity Exposure Index (0–100)** — a transparent weighted composite
-   of availability gap + complaint friction + socioeconomic vulnerability.
-2. **Access–Infrastructure Mismatch** — `planned_MW_norm × equity_index_norm`,
-   which scores high *only* where lots of incoming compute sits on top of the
-   worst lived access.
-
-## Data sources & access model
-
-| Layer | Source | Access | Auth |
-|---|---|---|---|
-| Complaints | FCC CGB Consumer Complaints (Socrata) | live API | none (app token optional) |
-| Socioeconomic | Census ACS 5-year | live API | **free key required** |
-| Broadband | FCC National Broadband Map (BDC) | bulk file or API | FCC account/token *or* one-time download |
-| Infrastructure | PNNL Data Center Atlas + LBNL interconnection queue | file download | none |
-| Water (best-effort) | USGS county water use + modeled draw | file download | none |
-
-The FCC complaint data intentionally has **no provider field** — which is *why*
-the platform analyses places, not companies.
-
-## Thresholds (not invented)
-
-Broadband tiers use the **BEAD statutory definitions** (IIJA 2021):
-
-- **Unserved** — location lacks 25/3 Mbps
-- **Underserved** — location lacks 100/20 Mbps (FCC fixed benchmark, Mar 2024)
-
-The speed thresholds are statutory; the *county-level* "digital desert" cutoff
-(what share of a county's locations below benchmark makes the whole county a
-desert) is an explicit analytic choice set from the distribution (top quartile),
-configurable in `config/config.yaml`.
+> **Framing guardrail.** The data-center overlay is a spatial juxtaposition, not
+> a causal claim — data centers don't provide residential broadband. It shows
+> *where investment concentrates relative to access gaps.*
 
 ---
 
-## Quick start
+## What it is
+
+An end-to-end analytics platform:
+
+1. A reproducible **Python pipeline** fuses four public federal datasets, rolls
+   everything up to the **county** grain (~3,200 counties), and computes two
+   signature metrics.
+2. It publishes analysis-ready "gold" tables (CSV + a single Excel workbook) to
+   **Microsoft Power BI**, which renders five dashboards.
+3. A **React web console** embeds those dashboards with an intro/overview page,
+   an about/methodology page, a color-severity legend, and an **auto-generated
+   analysis panel** under each dashboard that summarizes the data in plain
+   language (grounded in the actual numbers — no hallucinated figures).
+
+### Signature metrics
+- **Digital Equity Exposure Index (0–100)** — a transparent weighted composite
+  of broadband availability gap, complaint friction, and socioeconomic
+  vulnerability. Higher = more exposure / less equitable access.
+- **Access–Infrastructure Mismatch** — data-center intensity × equity exposure,
+  so a county scores high only when both are high.
+
+## Data sources
+
+| Layer | Source | Access |
+|---|---|---|
+| Consumer complaints | FCC CGB Consumer Complaints (FCC Open Data / Socrata) | live API, no key |
+| Broadband availability | FCC National Broadband Map — *Fixed Broadband Summary by Geography* | one national CSV download |
+| Socioeconomic context | U.S. Census ACS 5-year | live API (free key) |
+| Data-center locations | PNNL Data Center Atlas | file download |
+
+The public complaint data has **no provider field** — which is *why* Telequity
+analyses places, not companies.
+
+## Methodology (transparent)
+
+- **Broadband tiers** use the federal **BEAD** definitions: unserved < 25/3 Mbps,
+  underserved < 100/20 Mbps (reliable technologies only — wired + licensed fixed
+  wireless).
+- **Equity index** is min-max normalized across counties: availability gap
+  (40%) + complaint friction per 1,000 households (35%) + socioeconomic
+  vulnerability from income/age/rurality (25%).
+- **Digital deserts** = counties in the top quartile of locations below the
+  100/20 benchmark.
+- Full detail lives in the app's **About & Methodology** page and in
+  [`powerbi/POWERBI_GUIDE.md`](powerbi/POWERBI_GUIDE.md).
+
+---
+
+## Quick start (demo — no credentials)
 
 ```bash
-# 1. Install
+# Python pipeline (bundled synthetic national data)
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+python scripts/run_texas_pilot.py --demo      # writes gold tables + analysis.json
 
-# 2a. Demo run — NO credentials needed (labeled synthetic metrics, real TX
-#     county FIPS). Lets you build the Power BI report immediately.
-python scripts/run_texas_pilot.py --demo
-
-# 2b. Real run — set up .env first (see below), download reference files
-#     (see data/reference/README.md), then:
-python scripts/run_texas_pilot.py
+# Web console
+cd web && npm install && npm run dev           # http://localhost:5173
 ```
 
-Gold tables land in `data/processed/` (demo tables carry a `_DEMO` suffix).
-Point Power BI at that folder — see `powerbi/POWERBI_GUIDE.md`.
+The demo generates a full **national** synthetic dataset (real county FIPS +
+names) so the pipeline, dashboards, and web app all light up before you wire any
+real data.
 
-### Credentials (`.env`)
+## Real national run
 
-Copy `.env.example` to `.env` and fill in:
-
-- `CENSUS_API_KEY` — free, required ([sign up](https://api.census.gov/data/key_signup.html))
-- `FCC_BDC_USERNAME` / `FCC_BDC_TOKEN` — only if pulling broadband via API
-- `FCC_SOCRATA_APP_TOKEN` — optional, raises complaint API rate limit
-
----
-
-## Architecture (medallion)
-
-```
-ingest (bronze)            transform (silver)          score            model (gold)
-─────────────────          ──────────────────          ──────           ────────────
-fcc_complaints.py   ─┐     complaints.py  ─┐            index.py   ─┐    build_gold.py
-census_acs.py        ├──►  broadband.py    ├──► county ─┤           ├──► fact_county
-broadband.py         │     acs.py          │    (FIPS)  mismatch.py │    dim_county
-data_centers.py      │     infrastructure.py│           ─┘          │    dim_category
-water.py            ─┘     geography.py    ─┘                       ─┘    fact_complaint_category
-                                                                         fact_data_center
-```
-
-Everything joins on one key: **`county_fips`** (5-digit string).
-
-```
-src/telequity/
-├── config.py            # loads config/config.yaml + .env
-├── ingest/              # bronze: pull raw sources
-├── transform/           # silver: clean + roll up to county
-├── score/               # equity index + mismatch
-├── model/build_gold.py  # assemble the star schema
-├── demo.py              # labeled synthetic generator (no creds)
-└── pipeline.py          # orchestrator (real | --demo)
-```
-
-## Tests
+See **[`RUN_FULL.md`](RUN_FULL.md)** for the full checklist. In short: add a free
+`CENSUS_API_KEY` to `.env`, drop the FCC broadband summary CSV into `data/raw/bdc/`
+and the PNNL Atlas CSV into `data/raw/`, then:
 
 ```bash
-pytest          # 13 unit + smoke tests (scoring math, BEAD tiers, ZIP join, demo)
+python scripts/run_texas_pilot.py             # real, national (no --demo)
 ```
 
-## Scope: national
+Reference geographies (county shapefile + ZIP↔county crosswalk) auto-download.
+Scope is set in `config/config.yaml` (`scope.mode: national`, or `state` for a
+single-state run).
 
-The pipeline defaults to **national** scope (`scope.mode: national` in
-`config/config.yaml`) — every US county across the 50 states + DC. To restrict
-to one state (e.g. the original Texas pilot), set `mode: state`, `state_fips: "48"`,
-`state_abbr: "TX"`.
+## Tests & CI
 
-### Running the full US on real data
+```bash
+pytest                 # Python pipeline tests
+cd web && npm test     # web config/API tests
+```
 
-- **Complaints** (Socrata) and **ACS** (Census key) both pull nationally with no
-  extra work — ACS returns all ~3,143 counties; complaints stream all states.
-- **Broadband** is the heavy input: the national BDC location file is very large.
-  Practical path — download the **fixed-broadband availability CSV per state**
-  from broadbandmap.fcc.gov/data-download, drop them all into a folder, and point
-  `broadband.bulk_download_path` at that **folder** (the loader concatenates every
-  CSV in it). Or use FCC area/summary files. The pipeline aggregates to county
-  regardless of how many files you provide.
-- **Data centers** (PNNL + LBNL) are national files already.
+GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the
+Python tests + a pipeline smoke test and the web build + tests on every push.
 
-Phasing: pilot ✔ → **national ✔ (code)** → automated refresh. Broadband refreshes
-twice yearly (Jun 30 / Dec 31); water remains best-effort.
+## Architecture
 
-> The bundled `--demo` now generates a **national** synthetic dataset (real county
-> FIPS + names for all states + DC) so the dashboards show the whole US before you
-> run the real, credentialed pull.
+```
+ingest (bronze)          transform (silver)        score          model (gold)          web
+────────────────         ──────────────────        ──────         ────────────          ───
+fcc_complaints  ─┐       complaints  ─┐             index    ─┐    build_gold      ─┐    React app
+census_acs       │  ──►  broadband    │  ──► county friction ├──► fact_county       ├──► embeds
+broadband        │       acs          │    (FIPS)  mismatch  ─┘    dim_* / fact_*    │    Power BI +
+data_centers     │       infrastructure│                          analysis.json  ───┘    analysis
+fetch_reference ─┘       geography    ─┘                           telequity_gold.xlsx
+```
+
+```
+src/telequity/     Python pipeline (ingest / transform / score / model + analysis)
+web/               React + Vite console (embeds Power BI, intro/about, AI panels)
+powerbi/           Power BI build guide + data dictionary
+config/            central config (scope, weights, thresholds, tier breaks)
+tests/             pytest suite   ·   web/src/*.test.js   Vitest suite
+RUN_FULL.md        real-data run checklist   ·   SETUP.md   cold-start setup
+```
+
+## Disclaimer
+
+Consumer complaints are self-reported and unverified by the FCC. Index values are
+relative within the dataset (comparisons between counties, not absolute ratings).
+The data-center overlay is juxtaposition, not causation. Figures reflect specific
+data vintages and may lag current conditions.

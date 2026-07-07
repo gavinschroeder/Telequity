@@ -1,4 +1,7 @@
 import StateCard from "./StateCard.jsx";
+import AnalysisPanel from "./AnalysisPanel.jsx";
+import ColorLegend from "./ColorLegend.jsx";
+import { EQUITY_LEGEND } from "../config";
 
 /**
  * Public ("Publish to web") embed. Renders the report as a plain iframe — no
@@ -26,6 +29,7 @@ export default function PublicReportCanvas({ url, page }) {
         <h2>{page.label}</h2>
         <p>{page.blurb}</p>
       </div>
+      {page.legend === "equity" && <ColorLegend legend={EQUITY_LEGEND} />}
       <div className="report-frame">
         <iframe
           title={page.label}
@@ -34,6 +38,7 @@ export default function PublicReportCanvas({ url, page }) {
           allowFullScreen
         />
       </div>
+      <AnalysisPanel pageKey={page.key} />
     </div>
   );
 }

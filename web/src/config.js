@@ -39,14 +39,30 @@ export const REPORT_PAGES = [
     label: "Equity Index Map",
     blurb: "Digital Equity Exposure Index by county — the national picture.",
     pageName: "952fed3444d3b0ea1416",
+    legend: "equity",
   },
   {
     key: "datacenter-map",
     label: "Data-Center Map",
     blurb: "U.S. data-center locations over the access surface.",
     pageName: "d036e92ea6347516d1ac",
+    legend: "equity",
   },
 ];
+
+// Color scheme for the Digital Equity Exposure Index maps (dashboards 4 & 5).
+// Breaks follow the national distribution: green below the median (12.7),
+// yellow to the 75th pct (16.8), red to the 90th pct (23), dark red above.
+// Higher index = more exposure = less equitable access.
+export const EQUITY_LEGEND = {
+  caption: "Color = Digital Equity Exposure Index · higher = less equitable access",
+  tiers: [
+    { color: "#22c55e", range: "< 12.7", label: "Lower exposure" },
+    { color: "#eab308", range: "12.7 – 16.8", label: "Moderate" },
+    { color: "#ef4444", range: "16.8 – 23", label: "High" },
+    { color: "#7f1d1d", range: "> 23", label: "Very high" },
+  ],
+};
 
 // Embedding mode:
 //   "public" (default) — Publish to web. A plain public iframe; no backend,
